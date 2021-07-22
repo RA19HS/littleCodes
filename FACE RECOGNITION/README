@@ -1,0 +1,7 @@
+g++ -I/usr/local/include -c eigen.cpp
+g++ -L/usr/local/lib eigen.o -o eigen -lgsl -lgslcblas -lm
+
+cmake .
+make
+./DisplayImage input
+./DisplayImage ins reza input

@@ -1,0 +1,13 @@
+#!/bin/bash
+while :; do
+	clear; read -rsn 1 -t 0.29 x;
+	if [ $? -gt 0 ]; then
+		o="sl";
+		if [ $(($RANDOM%2)) -eq 1 ]; then o+=" -a"; fi
+		if [ $(($RANDOM%2)) -eq 1 ]; then o+=" -l"; fi
+		if [ $(($RANDOM%2)) -eq 1 ]; then o+=" -F"; fi
+		if [ $(($RANDOM%2)) -eq 1 ]; then o+=" -c"; fi
+		$o;
+	else	exit 0;
+	fi
+done

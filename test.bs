@@ -1,0 +1,23 @@
+#!/bin/bash
+
+run="${1/%.cpp/.out}"
+g++ "$1" -O2 -o "$run"
+declare -i cnt=0;
+declare -i all=0;
+for s in "$2"*.in
+do
+    all=$all+1;
+    ./$run <"$s" >tmp.out
+#   ./$run <"$s" >"${s/%.in/.res}"
+
+    if  diff -Bbq tmp.out "${s/%.in/.out}" >/dev/null ; then
+	echo "AC";
+	cnt=$cnt+1;
+    else
+	echo "WA";
+    fi
+  #echo ${s/.in/.out};  
+done
+echo $cnt/$all;
+rm tmp.out
+

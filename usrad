@@ -1,0 +1,6 @@
+#!/bin/bash
+while read fname lname id initgrp grps; do
+	if useradd -m -g $initgrp -G $grps `echo $fname | head -c1`_$lname; then
+		printf "$id\n$id" | passwd `echo $fname | head -c1`_$lname
+	fi
+done
