@@ -1,5 +1,4 @@
 /* TODO
- * add constant events
  * ability: add & remove user events
  */
 #include<time.h>
@@ -17,16 +16,56 @@
 #define		HOUR		(((second-DAY*SECINDAY)/3600))
 #define		MINUTE		(((second-DAY*SECINDAY-HOUR*3600)/60))
 #define		SECOND		(((second-DAY*SECINDAY-HOUR*3600-MINUTE*60)))
+#define		MAXEVENT	12345
 time_t		_sec,second;
-int		i,month,year,next_option,one_line,colored_day[32];
+int		i,month,year,next_option,one_line,colored_day[32],show_events;
 char		*program_name;
-const char*const short_options="ha:A:l";
+const char*const short_options="ha:A:le";
 const struct	option long_options[]={
 		{"help",	0,0,'h'},
 		{"add-second",	1,0,'a'},
 		{"add-day",	1,0,'A'},
 		{"line",	0,0,'l'},
+		{"events",	0,0,'e'},
 		{NULL,		0,0, 0 }};
+struct		event{int day;char *desc;};
+const int	event_count[12]={3,4,3, 3,1,5, 3,2,3, 1,4,3};
+const struct	event	events[12][10]={
+/*FARVARDIN*/	{{1,	"NORUZ EVE"},
+		 {12,	"JOMHURI ESLAMI"},
+		 {25,	"ATTAR NEISHABURI"}},
+/*ORDIBEHESHT*/	{{1,	"SA'DI"},
+		 {3,	"SHEIKH BAHAYI"},
+		 {25,	"FERDOSI"},
+		 {28,	"KHAYYAM"}},
+/*KHORDAD*/	{{1,	"MOLLASADRA"},
+		 {14,	"REHLATE EMAM KHOMEINI"},
+		 {15,	"GHIAM 15 KHORDAD"}},
+/*TIR*/		{{4,	"TAVALLOD REZA"},
+		 {14,	"GHALAM"},
+		 {22,	"KHARAZMI"}},
+/*MORDAD*/	{{8,	"SHEIKH SHAHABEDDIN SOHREVARDI"}},
+/*SHAHRIVAR*/	{{1,	"ABU ALI SINA"},
+		 {5,	"ZAKARIA RAZI"},
+		 {13,	"ABU REIHAN BIRUNI"},
+		 {17,	"GHIAM 17 SHAHRIVAR"},
+		 {27,	"SHAHRIAR"}},
+/*MEHR*/	{{16,	"KUDAK"},
+		 {20,	"HAFEZ"},
+		 {29,	"KUHNAVARDI"}},
+/*ABAN*/	{{13,	"DANESHAMUZ"},
+		 {24,	"KETAB"}},
+/*AZAR*/	{{16,	"DANESHJU"},
+		 {25,	"PAZHUHESH"},
+		 {30,	"IALDA"}},
+/*DEI*/		{{13,	"SHAHADAT SARDAR HAJ GHASEM SOLEIMANI"}},
+/*BAHMAN*/	{{1,	"FERDOSI"},
+		 {12,	"BAZGASHT EMAM KHOMEINI BE IRAN"},
+		 {22,	"PIRUZI ENGHELAB ESLAMI"},
+		 {27,	"TAVALLOD MOHAMMAD"}},
+/*ESFAND*/	{{5,	"KHAJE NASIREDDIN TUSI"},
+		 {15,	"DERAKHTKARI"},
+		 {29,	"SAN'AT NAFT MELLI"}}};
 char		*DAY_NAME[]={	"SHANBE","1SHANBE","2SHANBE","3SHANBE",
 				"4SHANBE","5SHANBE","JOM'E"};
 char		*MONTH_NAME[]={	"FARVARDIN","ORDIBEHESHT","KHORDAD",
@@ -50,6 +89,7 @@ int main(int argc,char *argv[]){
 			case 'a':i=atoi(optarg);break;
 			case 'A':i+=atoi(optarg)*SECINDAY;break;
 			case 'l':one_line=1;break;
+			case 'e':show_events=1;break;
 			case  -1:break;
 			default:abort();
 		}
@@ -58,12 +98,17 @@ int main(int argc,char *argv[]){
 	_sec=second=_sec+i+IRANTIMEZONE+EPOCHREMSEC;	//  _sec := seconds since the beginning of 1348
 	for(year=EPOCHYEAR;second>=(365+isleapyear(year))*SECINDAY;)
 		second-=(365+isleapyear(year++))*SECINDAY;
-	for(;month<6&&second>31*SECINDAY;month++)second-=31*SECINDAY;
-	if(month>=6&&second>=DAYLIGHTSAVE)second-=DAYLIGHTSAVE;
+	for(;month<5&&second>31*SECINDAY;month++)second-=31*SECINDAY;
+	if(month>4&&second>=30*SECINDAY)second-=DAYLIGHTSAVE;
+	if(month>4&&second>=31*SECINDAY)month++,second-=31*SECINDAY;
 	for(;month>5&&second>30*SECINDAY;month++)second-=30*SECINDAY;
 	if(one_line)return printf("%i %s %d %s -- %.2d:%.2d:%.2d\n",year,MONTH_NAME[month],DAY+1,DAY_NAME[(_sec/SECINDAY-1)%7],HOUR,MINUTE,SECOND),fflush(0);
 	colored_day[DAY+1]=1;
+	if(show_events)for(i=0;i<event_count[month];i++)colored_day[events[month][i].day]=1;
 	print_month(month,year,(_sec/SECINDAY-DAY-1)%7);	//  3rd arg: 1st day of the month in the week: 0..6
+	if(show_events)
+		for(printf("\n\n%2i: TODAY\n",DAY+1),i=0;i<event_count[month];i++)
+			printf("%2i: %s%c",events[month][i].day,events[month][i].desc,"\n "[i+1==event_count[month]]);
 	return puts(""),0;
 }
 int isleapyear(int y){
@@ -85,7 +130,8 @@ int print_month(int month,int year,int begin_week){
 	if(month<6)month_length=31;
 	if(month==11&&!isleapyear(year))month_length=29;
 	for(i=1;i<=month_length;i++)
-		printf("%s%s%s%d%s",i-1&&(i-1+begin_week)%7==0?"\n":i-1?" ":"",colored_day[i]?SEASON_COLOR[month/3]:"",i<10?" ":"",i,NOCOLOR);
+		printf("%s%s%s%s%d%s",i-1&&(i-1+begin_week)%7==0?"\n":i-1?" ":"",colored_day[i]?COLORED:"",
+			colored_day[i]?SEASON_COLOR[month/3]:"",i<10?" ":"",i,NOCOLOR);
 }
 void print_usage(FILE *stream,int exit_code){
 		fprintf(stream,"\nUsage:");
@@ -94,6 +140,7 @@ void print_usage(FILE *stream,int exit_code){
 		fprintf(stream,"\noption:\n");
 		fprintf(stream,"  -a NUM, --add-second\t\tadd NUM seconds to current date\n");
 		fprintf(stream,"  -A NUM, --add-day\t\tadd NUM days to current date\n");
+		fprintf(stream,"  -e, --events\t\t\tshow events of month\n");
 		fprintf(stream,"  -l, --line\t\t\tprint output in one line\n");
 		fprintf(stream,"  -h, --help\t\t\tdisplay this help and exit\n");
 		fprintf(stream,"\n");
