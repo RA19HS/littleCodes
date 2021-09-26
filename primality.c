@@ -1,4 +1,4 @@
-/* TODO:	100..200 digits integer
+/* TODO:	1000 digits integer
  * 		big int functions:
  * 			= + - * % ==0 >0 &1 <<1 >>1 random() 
  */
@@ -40,11 +40,8 @@ int main(int argc,char **argv){
 }
 int power_mod(int a,int b,int m){
 	if(!b)return 1;
-	long r;
-	r=power_mod(a,b/2,m);
-	r=r*r%m;
-	if(b%2)r=r*a%m;
-	return r;
+	long r=power_mod(a,b/2,m);
+	return r*r%m*((b&1)==1?a:1)%m;
 }
 int fermat(int n){
 	int i;
@@ -55,17 +52,15 @@ int fermat(int n){
 	return 1;
 }
 int miller_rabin(int n){
-	int i,j,t,u,a;
+	int i,j,u;
 	long x;
 	srand(7777777U+n);
-	for(t=0,u=n-1;u%2==0;)t++,u>>=1;	//  n-1 = 2^t*u,  u = 2k-1
+	for(u=n-1;u&1==0;)u>>=1;	//  n-1 = 2^t*u,  u = 2k-1
 	for(i=0;i<123;i++){
-		a=rand()%(n-2)+2;
-		x=power_mod(a,u,n);
+		x=power_mod(rand()%(n-2)+2,u,n);
 		//if(power_mod(a,n-1,n)-1)return 0;	//  fermat primality test
-		if(x==1)continue;
-		for(j=0;j<t;j++,x=x*x%n)if(x==n-1)goto L;
-		return 0;
-L:;     }
+		if(x==1||x+1==0)continue;
+		else return 0;
+	}
 	return 1;
 }
